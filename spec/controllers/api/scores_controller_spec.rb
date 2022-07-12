@@ -30,10 +30,11 @@ describe Api::ScoresController, type: :request do
     it 'should return the latest 25 scores even if more scores are in present' do
       expected_scores = [@score1.serialize, @score2.serialize, @score3.serialize]
       # generate 50 new entries in the score table
-      (1..50).each { |i|
-        score = create(:score, user: @user1, total_score: rand(54..120), played_at: Date.today - i.day).serialize
+      (1..50).each do |i|
+        score = create(:score, user: @user1, total_score: rand(54..120),
+                               played_at: Time.zone.today - i.day).serialize
         expected_scores.append score
-      }
+      end
 
       # sort the expected scores decreasingly by played_at
       expected_scores = expected_scores.sort_by { |item| item[:played_at] }.reverse!
@@ -57,10 +58,11 @@ describe Api::ScoresController, type: :request do
     it 'should return all scores if less than 25' do
       expected_scores = [@score1.serialize, @score2.serialize, @score3.serialize]
       # generate 50 new entries in the score table
-      (1..10).each { |i|
-        score = create(:score, user: @user1, total_score: rand(54..120), played_at: Date.today - i.day).serialize
+      (1..10).each do |i|
+        score = create(:score, user: @user1, total_score: rand(54..120),
+                               played_at: Time.zone.today - i.day).serialize
         expected_scores.append score
-      }
+      end
 
       # sort the expected scores decreasingly by played_at
       expected_scores = expected_scores.sort_by { |item| item[:played_at] }.reverse!
@@ -80,14 +82,13 @@ describe Api::ScoresController, type: :request do
       expect(scores.size).to eq 13
       expect(scores).to eq expected_scores[0, 13]
     end
-
   end
 
   describe 'POST create' do
     it 'should save and return the new score if valid parameters' do
       score_count = Score.count
 
-      post api_scores_path, params: { score: { total_score: 79, played_at: '2021-06-29' } }
+      post api_scores_path, params: { score: { total_score: 79, played_at: '2021-06-29' }}
 
       expect(response).to have_http_status(:ok)
       expect(Score.count).to eq score_count + 1
@@ -107,7 +108,7 @@ describe Api::ScoresController, type: :request do
     it 'should return a validation error if score is played in the future' do
       score_count = Score.count
 
-      post api_scores_path, params: { score: { total_score: 79, played_at: '2090-06-29' } }
+      post api_scores_path, params: { score: { total_score: 79, played_at: '2090-06-29' }}
 
       expect(response).not_to have_http_status(:ok)
       expect(Score.count).to eq score_count
@@ -116,7 +117,7 @@ describe Api::ScoresController, type: :request do
     it 'should return a validation error if score value is too low' do
       score_count = Score.count
 
-      post api_scores_path, params: { score: { total_score: 10, played_at: '2021-06-29' } }
+      post api_scores_path, params: { score: { total_score: 10, played_at: '2021-06-29' }}
 
       expect(response).not_to have_http_status(:ok)
       expect(Score.count).to eq score_count
