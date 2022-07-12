@@ -29,11 +29,11 @@ User.create!(
 rng = Random.new
 now = Time.zone.today
 User.all.each do |user|
-  5.times do |i|
+  100.times do |i|
     Score.create!(
       user: user,
       total_score: rng.rand(66..99),
-      played_at: now - 5.days + i.days
+      played_at: now - 100.days + i.days
     )
   end
 end
