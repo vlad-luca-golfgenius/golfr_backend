@@ -12,7 +12,7 @@ describe Api::ScoresController, type: :request do
   end
 
   describe 'GET feed' do
-    it 'should return the token if valid username/password' do
+    it 'should return the scores ordered by played at if valid username/password' do
       get api_feed_path
 
       expect(response).to have_http_status(:ok)
@@ -25,6 +25,62 @@ describe Api::ScoresController, type: :request do
       expect(scores[0]['played_at']).to eq '2021-06-20'
       expect(scores[1]['total_score']).to eq 68
       expect(scores[2]['total_score']).to eq 79
+    end
+
+    it 'should return the latest 25 scores even if more scores are in present' do
+      expected_scores = [@score1.serialize, @score2.serialize, @score3.serialize]
+      # generate 50 new entries in the score table
+      (1..50).each do |i|
+        score = create(:score, user: @user1, total_score: rand(54..120),
+                               played_at: Time.zone.today - i.day).serialize
+        expected_scores.append score
+      end
+
+      # sort the expected scores decreasingly by played_at
+      expected_scores = expected_scores.sort_by { |item| item[:played_at] }.reverse!
+
+      # convert the date to string
+      expected_scores = expected_scores.map do |score|
+        score[:played_at] = score[:played_at].strftime('%Y-%m-%d')
+        score
+      end
+
+      get api_feed_path
+
+      expect(response).to have_http_status(:ok)
+      response_hash = JSON.parse(response.body, symbolize_names: true)
+      scores = response_hash[:scores]
+
+      expect(scores.size).to eq 25
+      expect(scores).to eq expected_scores[0, 25]
+    end
+
+    it 'should return all scores if less than 25' do
+      expected_scores = [@score1.serialize, @score2.serialize, @score3.serialize]
+      # generate 50 new entries in the score table
+      (1..10).each do |i|
+        score = create(:score, user: @user1, total_score: rand(54..120),
+                               played_at: Time.zone.today - i.day).serialize
+        expected_scores.append score
+      end
+
+      # sort the expected scores decreasingly by played_at
+      expected_scores = expected_scores.sort_by { |item| item[:played_at] }.reverse!
+
+      # convert the date to string
+      expected_scores = expected_scores.map do |score|
+        score[:played_at] = score[:played_at].strftime('%Y-%m-%d')
+        score
+      end
+
+      get api_feed_path
+
+      expect(response).to have_http_status(:ok)
+      response_hash = JSON.parse(response.body, symbolize_names: true)
+      scores = response_hash[:scores]
+
+      expect(scores.size).to eq 13
+      expect(scores).to eq expected_scores[0, 13]
     end
   end
 
